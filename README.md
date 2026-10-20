@@ -55,7 +55,7 @@ SmartCare 基于 RuoYi-Vue 二次开发，围绕「社区监管 + 家属照护�
 | 可视化 | ECharts 5.6 |
 | AI | 通义千问（DashScope OpenAI 兼容接口）、百度千帆文心一言 |
 | 权限 | RuoYi 角色 / 菜单 / 按钮权限体系 |
-| 接口文档 | Knife4j / Swagger |
+| 接口文档 | Swagger |
 
 ## 系统架构
 
@@ -189,7 +189,7 @@ npm run dev
 
 - 前端：`http://localhost:8080`
 - 后端：`http://localhost:8888`
-- 接口文档：`http://localhost:8888/doc.html`（Knife4j）或 `http://localhost:8888/swagger-ui/index.html`
+- 接口文档：`http://localhost:8888/swagger-ui/index.html`
 
 ## 演示账号
 
@@ -273,6 +273,7 @@ npm run dev
 - 原开发环境中的 AI API Key 已移除，请勿将真实 Key 提交到 Git。
 - 演示账号仅用于本地验收，公网部署前请修改密码、关闭 Druid 控制台或增加访问限制。
 - 建议在生产环境开启 HTTPS、限制上传目录访问、配置日志脱敏。
+- 详细安全策略见 [SECURITY.md](SECURITY.md)。
 
 ## 后续规划
 
@@ -282,7 +283,11 @@ npm run dev
 - [ ] 增加短信/微信/电话机器人通知
 - [ ] 增加闭环率、误报率、响应时效、设备在线率统计
 - [ ] 补充 Swagger/OpenAPI 示例与自动化测试
+- [ ] 补充社区总览、家属门户、社区大屏运行截图
 
 ## License
 
-本项目基于 [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue)（MIT）二次开发，仅用于学习、课程设计与演示。使用前请遵守 RuoYi 的开源协议。
+本项目基于 [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue)（MIT）二次开发，仅用于学习、课程设计与演示。
+
+本项目自身代码使用 [MIT License](LICENSE)。使用前请同时遵守 RuoYi 的开源协议。
+
