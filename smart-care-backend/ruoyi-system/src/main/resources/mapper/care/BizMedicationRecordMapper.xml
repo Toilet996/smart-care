@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.BizMedicationRecordMapper">
+    <resultMap id="BizMedicationRecordResult" type="BizMedicationRecord">
+        <result property="recordId" column="record_id"/>
+        <result property="planId" column="plan_id"/>
+        <result property="elderlyId" column="elderly_id"/>
+        <result property="elderlyName" column="elderly_name"/>
+        <result property="medicationName" column="medication_name"/>
+        <result property="planTime" column="plan_time"/>
+        <result property="executeStatus" column="execute_status"/>
+        <result property="sourceType" column="source_type"/>
+        <result property="metricValue" column="metric_value"/>
+        <result property="scheduledDate" column="scheduled_date"/>
+        <result property="scheduledTime" column="scheduled_time"/>
+        <result property="actualTime" column="actual_time"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectBizMedicationRecordVo">
+        select
+            record_id, plan_id, elderly_id, elderly_name, medication_name, plan_time, execute_status,
+            source_type, metric_value, scheduled_date, scheduled_time, actual_time,
+            remark, create_by, create_time, update_by, update_time
+        from biz_medication_record
+    </sql>
+
+    <select id="selectBizMedicationRecordByRecordId" parameterType="Long" resultMap="BizMedicationRecordResult">
+        <include refid="selectBizMedicationRecordVo"/>
+        where record_id = #{recordId}
+    </select>
+
+    <select id="selectBizMedicationRecordList" parameterType="BizMedicationRecord" resultMap="BizMedicationRecordResult">
+        <include refid="selectBizMedicationRecordVo"/>
+        <where>
+            <if test="planId != null"> and plan_id = #{planId}</if>
+            <if test="elderlyId != null"> and elderly_id = #{elderlyId}</if>
+            <if test="elderlyName != null and elderlyName != ''"> and elderly_name like concat('%', #{elderlyName}, '%')</if>
+            <if test="medicationName != null and medicationName != ''"> and medication_name like concat('%', #{medicationName}, '%')</if>
+            <if test="executeStatus != null and executeStatus != ''"> and execute_status = #{executeStatus}</if>
+            <if test="scheduledDate != null"> and scheduled_date = #{scheduledDate}</if>
+            <if test="params.currentUserId != null">
+                and elderly_id in (
+                    select f.elderly_id
+                    from biz_elderly_family f
+                    where f.user_id = #{params.currentUserId}
+                )
+            </if>
+        </where>
+        order by scheduled_date desc, plan_time asc, record_id desc
+    </select>
+
+    <insert id="insertBizMedicationRecord" parameterType="BizMedicationRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into biz_medication_record
+        (plan_id, elderly_id, elderly_name, medication_name, plan_time, execute_status,
+         source_type, metric_value, scheduled_date, scheduled_time, actual_time,
+         remark, create_by, create_time)
+        values
+        (#{planId}, #{elderlyId}, #{elderlyName}, #{medicationName}, #{planTime}, #{executeStatus},
+         #{sourceType}, #{metricValue}, #{scheduledDate}, #{scheduledTime}, #{actualTime},
+         #{remark}, #{createBy}, #{createTime})
+    </insert>
+
+    <update id="updateBizMedicationRecord" parameterType="BizMedicationRecord">
+        update biz_medication_record
+        <set>
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="elderlyId != null">elderly_id = #{elderlyId},</if>
+            <if test="elderlyName != null">elderly_name = #{elderlyName},</if>
+            <if test="medicationName != null">medication_name = #{medicationName},</if>
+            <if test="planTime != null">plan_time = #{planTime},</if>
+            <if test="executeStatus != null">execute_status = #{executeStatus},</if>
+            <if test="sourceType != null">source_type = #{sourceType},</if>
+            <if test="metricValue != null">metric_value = #{metricValue},</if>
+            <if test="scheduledDate != null">scheduled_date = #{scheduledDate},</if>
+            <if test="scheduledTime != null">scheduled_time = #{scheduledTime},</if>
+            <if test="actualTime != null">actual_time = #{actualTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = #{updateTime}
+        </set>
+        where record_id = #{recordId}
+    </update>
+
+    <delete id="deleteBizMedicationRecordByRecordId" parameterType="Long">
+        delete from biz_medication_record where record_id = #{recordId}
+    </delete>
+
+    <delete id="deleteBizMedicationRecordByRecordIds" parameterType="Long">
+        delete from biz_medication_record where record_id in
+        <foreach collection="array" item="recordId" open="(" separator="," close=")">
+            #{recordId}
+        </foreach>
+    </delete>
+
+    <select id="selectByPlanAndDate" resultMap="BizMedicationRecordResult">
+        <include refid="selectBizMedicationRecordVo"/>
+        where plan_id = #{planId}
+          and scheduled_date = #{scheduledDate}
+        order by record_id desc
+        limit 1
+    </select>
+</mapper>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.BizWorkOrderMapper">
+    
+    <resultMap type="BizWorkOrder" id="BizWorkOrderResult">
+        <result property="orderId"    column="order_id"    />
+        <result property="alertId"    column="alert_id"    />
+        <result property="elderlyId"    column="elderly_id"    />
+        <result property="elderlyName"    column="elderly_name"    />
+        <result property="processRecord"    column="process_record"    />
+        <result property="status"    column="status"    />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectBizWorkOrderVo">
+        select order_id, alert_id, elderly_id, elderly_name, process_record, status, create_time from biz_work_order
+    </sql>
+
+    <select id="selectBizWorkOrderList" parameterType="BizWorkOrder" resultMap="BizWorkOrderResult">
+        <include refid="selectBizWorkOrderVo"/>
+        <where>  
+            <if test="orderId != null "> and order_id = #{orderId}</if>
+            <if test="alertId != null "> and alert_id = #{alertId}</if>
+            <if test="elderlyId != null "> and elderly_id = #{elderlyId}</if>
+            <if test="elderlyName != null  and elderlyName != ''"> and elderly_name like concat('%', #{elderlyName}, '%')</if>
+            <if test="processRecord != null  and processRecord != ''"> and process_record = #{processRecord}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="params.currentUserId != null">
+                and elderly_id in (
+                    select f.elderly_id
+                    from biz_elderly_family f
+                    where f.user_id = #{params.currentUserId}
+                )
+            </if>
+        </where>
+    </select>
+    
+    <select id="selectBizWorkOrderByOrderId" parameterType="Long" resultMap="BizWorkOrderResult">
+        <include refid="selectBizWorkOrderVo"/>
+        where order_id = #{orderId}
+    </select>
+
+    <select id="selectBizWorkOrderByAlertId" parameterType="Long" resultMap="BizWorkOrderResult">
+        <include refid="selectBizWorkOrderVo"/>
+        where alert_id = #{alertId}
+        limit 1
+    </select>
+
+    <insert id="insertBizWorkOrder" parameterType="BizWorkOrder" useGeneratedKeys="true" keyProperty="orderId">
+        insert into biz_work_order
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="alertId != null">alert_id,</if>
+            <if test="elderlyId != null">elderly_id,</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name,</if>
+            <if test="processRecord != null">process_record,</if>
+            <if test="status != null">status,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="alertId != null">#{alertId},</if>
+            <if test="elderlyId != null">#{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">#{elderlyName},</if>
+            <if test="processRecord != null">#{processRecord},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizWorkOrder" parameterType="BizWorkOrder">
+        update biz_work_order
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="alertId != null">alert_id = #{alertId},</if>
+            <if test="elderlyId != null">elderly_id = #{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name = #{elderlyName},</if>
+            <if test="processRecord != null">process_record = #{processRecord},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where order_id = #{orderId}
+    </update>
+
+    <delete id="deleteBizWorkOrderByOrderId" parameterType="Long">
+        delete from biz_work_order where order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteBizWorkOrderByOrderIds" parameterType="String">
+        delete from biz_work_order where order_id in 
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+    </delete>
+</mapper>

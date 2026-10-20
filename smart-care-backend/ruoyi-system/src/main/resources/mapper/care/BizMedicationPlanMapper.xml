@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.BizMedicationPlanMapper">
+    <resultMap id="BizMedicationPlanResult" type="BizMedicationPlan">
+        <result property="planId" column="plan_id"/>
+        <result property="elderlyId" column="elderly_id"/>
+        <result property="elderlyName" column="elderly_name"/>
+        <result property="medicationName" column="medication_name"/>
+        <result property="dosage" column="dosage"/>
+        <result property="usageMethod" column="usage_method"/>
+        <result property="periodCode" column="period_code"/>
+        <result property="planTime" column="plan_time"/>
+        <result property="startDate" column="start_date"/>
+        <result property="endDate" column="end_date"/>
+        <result property="status" column="status"/>
+        <result property="reminderEnabled" column="reminder_enabled"/>
+        <result property="recentTakenCount" column="recent_taken_count"/>
+        <result property="recentMissedCount" column="recent_missed_count"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectBizMedicationPlanVo">
+        select
+            p.plan_id, p.elderly_id, p.elderly_name, p.medication_name, p.dosage, p.usage_method,
+            p.period_code, p.plan_time, p.start_date, p.end_date, p.status, p.reminder_enabled,
+            p.remark, p.create_by, p.create_time, p.update_by, p.update_time,
+            (
+                select count(*)
+                from biz_medication_record r
+                where r.plan_id = p.plan_id and r.execute_status = '1'
+            ) as recent_taken_count,
+            (
+                select count(*)
+                from biz_medication_record r
+                where r.plan_id = p.plan_id and r.execute_status = '2'
+            ) as recent_missed_count
+        from biz_medication_plan p
+    </sql>
+
+    <select id="selectBizMedicationPlanByPlanId" parameterType="Long" resultMap="BizMedicationPlanResult">
+        <include refid="selectBizMedicationPlanVo"/>
+        where p.plan_id = #{planId}
+    </select>
+
+    <select id="selectBizMedicationPlanList" parameterType="BizMedicationPlan" resultMap="BizMedicationPlanResult">
+        <include refid="selectBizMedicationPlanVo"/>
+        <where>
+            <if test="elderlyId != null"> and p.elderly_id = #{elderlyId}</if>
+            <if test="elderlyName != null and elderlyName != ''"> and p.elderly_name like concat('%', #{elderlyName}, '%')</if>
+            <if test="medicationName != null and medicationName != ''"> and p.medication_name like concat('%', #{medicationName}, '%')</if>
+            <if test="periodCode != null and periodCode != ''"> and p.period_code = #{periodCode}</if>
+            <if test="status != null and status != ''"> and p.status = #{status}</if>
+            <if test="params.currentUserId != null">
+                and p.elderly_id in (
+                    select f.elderly_id
+                    from biz_elderly_family f
+                    where f.user_id = #{params.currentUserId}
+                )
+            </if>
+        </where>
+        order by p.status asc, p.elderly_id asc, p.plan_time asc
+    </select>
+
+    <insert id="insertBizMedicationPlan" parameterType="BizMedicationPlan" useGeneratedKeys="true" keyProperty="planId">
+        insert into biz_medication_plan
+        (elderly_id, elderly_name, medication_name, dosage, usage_method, period_code, plan_time,
+         start_date, end_date, status, reminder_enabled, remark, create_by, create_time)
+        values
+        (#{elderlyId}, #{elderlyName}, #{medicationName}, #{dosage}, #{usageMethod}, #{periodCode}, #{planTime},
+         #{startDate}, #{endDate}, #{status}, #{reminderEnabled}, #{remark}, #{createBy}, #{createTime})
+    </insert>
+
+    <update id="updateBizMedicationPlan" parameterType="BizMedicationPlan">
+        update biz_medication_plan
+        <set>
+            <if test="elderlyId != null">elderly_id = #{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name = #{elderlyName},</if>
+            <if test="medicationName != null and medicationName != ''">medication_name = #{medicationName},</if>
+            <if test="dosage != null">dosage = #{dosage},</if>
+            <if test="usageMethod != null">usage_method = #{usageMethod},</if>
+            <if test="periodCode != null">period_code = #{periodCode},</if>
+            <if test="planTime != null">plan_time = #{planTime},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="reminderEnabled != null">reminder_enabled = #{reminderEnabled},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = #{updateTime}
+        </set>
+        where plan_id = #{planId}
+    </update>
+
+    <delete id="deleteBizMedicationPlanByPlanId" parameterType="Long">
+        delete from biz_medication_plan where plan_id = #{planId}
+    </delete>
+
+    <delete id="deleteBizMedicationPlanByPlanIds" parameterType="Long">
+        delete from biz_medication_plan where plan_id in
+        <foreach collection="array" item="planId" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </delete>
+
+    <select id="selectActivePlansByElderlyAndDate" resultMap="BizMedicationPlanResult">
+        <include refid="selectBizMedicationPlanVo"/>
+        where p.elderly_id = #{elderlyId}
+          and p.status = '0'
+          and p.start_date &lt;= #{scheduledDate}
+          and (p.end_date is null or p.end_date &gt;= #{scheduledDate})
+        order by p.plan_time asc
+    </select>
+</mapper>

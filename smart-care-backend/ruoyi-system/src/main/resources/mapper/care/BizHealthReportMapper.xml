@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.BizHealthReportMapper">
+    
+    <resultMap type="BizHealthReport" id="BizHealthReportResult">
+        <result property="reportId"    column="report_id"    />
+        <result property="elderlyId"    column="elderly_id"    />
+        <result property="elderlyName"    column="elderly_name"    />
+        <result property="reportType"    column="report_type"    />
+        <result property="reportDate"    column="report_date"    />
+        <result property="sleepScore"    column="sleep_score"    />
+        <result property="activityScore"    column="activity_score"    />
+        <result property="aiEvaluation"    column="ai_evaluation"    />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectBizHealthReportVo">
+        select report_id, elderly_id, elderly_name, report_type, report_date, sleep_score, activity_score, ai_evaluation, create_time from biz_health_report
+    </sql>
+
+    <select id="selectBizHealthReportList" parameterType="BizHealthReport" resultMap="BizHealthReportResult">
+        <include refid="selectBizHealthReportVo"/>
+        <where>  
+            <if test="elderlyId != null "> and elderly_id = #{elderlyId}</if>
+            <if test="elderlyName != null  and elderlyName != ''"> and elderly_name like concat('%', #{elderlyName}, '%')</if>
+            <if test="reportType != null  and reportType != ''"> and report_type = #{reportType}</if>
+            <if test="reportDate != null "> and report_date = #{reportDate}</if>
+            <if test="sleepScore != null "> and sleep_score = #{sleepScore}</if>
+            <if test="activityScore != null "> and activity_score = #{activityScore}</if>
+            <if test="aiEvaluation != null  and aiEvaluation != ''"> and ai_evaluation = #{aiEvaluation}</if>
+            <if test="params.currentUserId != null">
+                and elderly_id in (
+                    select f.elderly_id
+                    from biz_elderly_family f
+                    where f.user_id = #{params.currentUserId}
+                )
+            </if>
+        </where>
+    </select>
+    
+    <select id="selectBizHealthReportByReportId" parameterType="Long" resultMap="BizHealthReportResult">
+        <include refid="selectBizHealthReportVo"/>
+        where report_id = #{reportId}
+    </select>
+
+    <insert id="insertBizHealthReport" parameterType="BizHealthReport" useGeneratedKeys="true" keyProperty="reportId">
+        insert into biz_health_report
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="elderlyId != null">elderly_id,</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name,</if>
+            <if test="reportType != null and reportType != ''">report_type,</if>
+            <if test="reportDate != null">report_date,</if>
+            <if test="sleepScore != null">sleep_score,</if>
+            <if test="activityScore != null">activity_score,</if>
+            <if test="aiEvaluation != null">ai_evaluation,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="elderlyId != null">#{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">#{elderlyName},</if>
+            <if test="reportType != null and reportType != ''">#{reportType},</if>
+            <if test="reportDate != null">#{reportDate},</if>
+            <if test="sleepScore != null">#{sleepScore},</if>
+            <if test="activityScore != null">#{activityScore},</if>
+            <if test="aiEvaluation != null">#{aiEvaluation},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizHealthReport" parameterType="BizHealthReport">
+        update biz_health_report
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="elderlyId != null">elderly_id = #{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name = #{elderlyName},</if>
+            <if test="reportType != null and reportType != ''">report_type = #{reportType},</if>
+            <if test="reportDate != null">report_date = #{reportDate},</if>
+            <if test="sleepScore != null">sleep_score = #{sleepScore},</if>
+            <if test="activityScore != null">activity_score = #{activityScore},</if>
+            <if test="aiEvaluation != null">ai_evaluation = #{aiEvaluation},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where report_id = #{reportId}
+    </update>
+
+    <delete id="deleteBizHealthReportByReportId" parameterType="Long">
+        delete from biz_health_report where report_id = #{reportId}
+    </delete>
+
+    <delete id="deleteBizHealthReportByReportIds" parameterType="String">
+        delete from biz_health_report where report_id in 
+        <foreach item="reportId" collection="array" open="(" separator="," close=")">
+            #{reportId}
+        </foreach>
+    </delete>
+</mapper>

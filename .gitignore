@@ -1,0 +1,44 @@
+# ---------- Java / Maven ----------
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# ---------- Node / Vite ----------
+**/node_modules/
+**/dist/
+**/.vite/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+
+# ---------- IDE ----------
+**/.idea/
+**/*.iml
+**/*.ipr
+**/*.iws
+**/.vscode/
+**/.settings/
+**/.classpath
+**/.project
+**/.factorypath
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+
+# ---------- Local config ----------
+**/.env.local
+**/application-local.yml
+**/application-local.yaml
+
+# ---------- Legacy / generated ----------
+# 后端自带的旧版 Vue2 UI，实际前端在 smart-care-frontend
+smart-care-backend/ruoyi-ui/
+# 若依默认环境手册与 AI 工具缓存
+smart-care-backend/doc/
+smart-care-backend/.workbuddy/
+smart-care-backend/package-lock.json

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.BizVisitRecordMapper">
+    
+    <resultMap type="BizVisitRecord" id="BizVisitRecordResult">
+        <result property="recordId"    column="record_id"    />
+        <result property="elderlyId"    column="elderly_id"    />
+        <result property="elderlyName"    column="elderly_name"    />
+        <result property="visitType"    column="visit_type"    />
+        <result property="visitTime"    column="visit_time"    />
+        <result property="visitContent"    column="visit_content"    />
+        <result property="createBy"    column="create_by"    />
+    </resultMap>
+
+    <sql id="selectBizVisitRecordVo">
+        select record_id, elderly_id, elderly_name, visit_type, visit_time, visit_content, create_by from biz_visit_record
+    </sql>
+
+    <select id="selectBizVisitRecordList" parameterType="BizVisitRecord" resultMap="BizVisitRecordResult">
+        <include refid="selectBizVisitRecordVo"/>
+        <where>  
+            <if test="elderlyId != null "> and elderly_id = #{elderlyId}</if>
+            <if test="elderlyName != null  and elderlyName != ''"> and elderly_name like concat('%', #{elderlyName}, '%')</if>
+            <if test="visitType != null  and visitType != ''"> and visit_type = #{visitType}</if>
+            <if test="visitTime != null "> and visit_time = #{visitTime}</if>
+            <if test="visitContent != null  and visitContent != ''"> and visit_content = #{visitContent}</if>
+            <if test="params.currentUserId != null">
+                and elderly_id in (
+                    select f.elderly_id
+                    from biz_elderly_family f
+                    where f.user_id = #{params.currentUserId}
+                )
+            </if>
+        </where>
+    </select>
+    
+    <select id="selectBizVisitRecordByRecordId" parameterType="Long" resultMap="BizVisitRecordResult">
+        <include refid="selectBizVisitRecordVo"/>
+        where record_id = #{recordId}
+    </select>
+
+    <insert id="insertBizVisitRecord" parameterType="BizVisitRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into biz_visit_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="elderlyId != null">elderly_id,</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name,</if>
+            <if test="visitType != null and visitType != ''">visit_type,</if>
+            <if test="visitTime != null">visit_time,</if>
+            <if test="visitContent != null">visit_content,</if>
+            <if test="createBy != null">create_by,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="elderlyId != null">#{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">#{elderlyName},</if>
+            <if test="visitType != null and visitType != ''">#{visitType},</if>
+            <if test="visitTime != null">#{visitTime},</if>
+            <if test="visitContent != null">#{visitContent},</if>
+            <if test="createBy != null">#{createBy},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizVisitRecord" parameterType="BizVisitRecord">
+        update biz_visit_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="elderlyId != null">elderly_id = #{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name = #{elderlyName},</if>
+            <if test="visitType != null and visitType != ''">visit_type = #{visitType},</if>
+            <if test="visitTime != null">visit_time = #{visitTime},</if>
+            <if test="visitContent != null">visit_content = #{visitContent},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+        </trim>
+        where record_id = #{recordId}
+    </update>
+
+    <delete id="deleteBizVisitRecordByRecordId" parameterType="Long">
+        delete from biz_visit_record where record_id = #{recordId}
+    </delete>
+
+    <delete id="deleteBizVisitRecordByRecordIds" parameterType="String">
+        delete from biz_visit_record where record_id in 
+        <foreach item="recordId" collection="array" open="(" separator="," close=")">
+            #{recordId}
+        </foreach>
+    </delete>
+</mapper>

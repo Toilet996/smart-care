@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.CareOverviewMapper">
+
+    <select id="selectCoreStats" resultType="java.util.HashMap">
+        select
+            (select count(*) from biz_elderly where status = '0') as elderlyTotal,
+            (select count(*) from iot_device where status = '0') as onlineDeviceTotal,
+            (select count(*) from biz_alert_record where date(create_time) = curdate()) as todayAlertTotal,
+            (select count(*) from biz_alert_record where alert_level = 2 and date(create_time) = curdate()) as urgentAlertTotal,
+            (select count(*) from biz_work_order where status in ('0', '1')) as pendingOrderTotal,
+            (select count(*) from biz_visit_record where visit_time >= date_sub(curdate(), interval 7 day)) as weekVisitTotal,
+            (select count(*) from biz_health_report) as reportTotal
+    </select>
+
+    <select id="selectAlertLevelStats" resultType="java.util.HashMap">
+        select
+            cast(alert_level as char) as value,
+            count(*) as count
+        from biz_alert_record
+        group by alert_level
+        order by alert_level
+    </select>
+
+    <select id="selectDeviceStatusStats" resultType="java.util.HashMap">
+        select
+            status as value,
+            count(*) as count
+        from iot_device
+        group by status
+        order by status
+    </select>
+
+    <select id="selectElderlyWatchList" resultType="java.util.HashMap">
+        select
+            e.elderly_id as elderlyId,
+            e.elderly_name as elderlyName,
+            e.address as address,
+            e.phone as phone,
+            ifnull((select count(*) from iot_device d where d.elderly_id = e.elderly_id), 0) as deviceCount,
+            ifnull((select count(*) from iot_device d where d.elderly_id = e.elderly_id and d.status = '0'), 0) as onlineDeviceCount,
+            ifnull((select count(*) from biz_alert_record ar where ar.elderly_id = e.elderly_id), 0) as alertCount,
+            ifnull((select count(*) from biz_work_order wo where wo.elderly_id = e.elderly_id and wo.status in ('0', '1')), 0) as pendingOrderCount,
+            (
+                select cast(ar.alert_level as char)
+                from biz_alert_record ar
+                where ar.elderly_id = e.elderly_id
+                order by ar.create_time desc
+                limit 1
+            ) as latestAlertLevel,
+            (
+                select ar.create_time
+                from biz_alert_record ar
+                where ar.elderly_id = e.elderly_id
+                order by ar.create_time desc
+                limit 1
+            ) as latestAlertTime,
+            (
+                select round((ifnull(hr.sleep_score, 0) + ifnull(hr.activity_score, 0)) / 2)
+                from biz_health_report hr
+                where hr.elderly_id = e.elderly_id
+                order by hr.report_date desc, hr.report_id desc
+                limit 1
+            ) as latestHealthScore,
+            (
+                select vr.visit_time
+                from biz_visit_record vr
+                where vr.elderly_id = e.elderly_id
+                order by vr.visit_time desc, vr.record_id desc
+                limit 1
+            ) as latestVisitTime
+        from biz_elderly e
+        where e.status = '0'
+        order by pendingOrderCount desc, alertCount desc, latestAlertTime desc
+        limit 8
+    </select>
+
+    <select id="selectRecentAlerts" resultType="java.util.HashMap">
+        select
+            ar.alert_id as alertId,
+            ar.elderly_id as elderlyId,
+            ar.elderly_name as elderlyName,
+            cast(ar.alert_level as char) as alertLevel,
+            ar.alert_type as alertType,
+            ar.handle_status as handleStatus,
+            ar.alert_desc as alertDesc,
+            ar.create_time as createTime
+        from biz_alert_record ar
+        order by ar.create_time desc, ar.alert_id desc
+        limit 6
+    </select>
+
+    <select id="selectPendingOrders" resultType="java.util.HashMap">
+        select
+            wo.order_id as orderId,
+            wo.alert_id as alertId,
+            wo.elderly_id as elderlyId,
+            wo.elderly_name as elderlyName,
+            wo.status as status,
+            wo.process_record as processRecord,
+            wo.create_time as createTime
+        from biz_work_order wo
+        where wo.status in ('0', '1')
+        order by wo.create_time desc, wo.order_id desc
+        limit 6
+    </select>
+
+    <select id="selectLatestReports" resultType="java.util.HashMap">
+        select
+            hr.report_id as reportId,
+            hr.elderly_id as elderlyId,
+            hr.elderly_name as elderlyName,
+            hr.report_type as reportType,
+            hr.report_date as reportDate,
+            hr.sleep_score as sleepScore,
+            hr.activity_score as activityScore,
+            round((ifnull(hr.sleep_score, 0) + ifnull(hr.activity_score, 0)) / 2) as totalScore,
+            hr.ai_evaluation as aiEvaluation
+        from biz_health_report hr
+        order by hr.report_date desc, hr.report_id desc
+        limit 6
+    </select>
+</mapper>

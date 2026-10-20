@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.BizAlertRecordMapper">
+    
+    <resultMap type="BizAlertRecord" id="BizAlertRecordResult">
+        <result property="alertId"    column="alert_id"    />
+        <result property="orderId"    column="order_id"    />
+        <result property="elderlyId"    column="elderly_id"    />
+        <result property="elderlyName"    column="elderly_name"    />
+        <result property="deviceId"    column="device_id"    />
+        <result property="deviceName"    column="device_name"    />
+        <result property="alertLevel"    column="alert_level"    />
+        <result property="alertType"    column="alert_type"    />
+        <result property="alertDesc"    column="alert_desc"    />
+        <result property="handleStatus"    column="handle_status"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectBizAlertRecordVo">
+        select ar.alert_id, wo.order_id, ar.elderly_id, ar.elderly_name, ar.device_id, ar.device_name, ar.alert_level, ar.alert_type, ar.alert_desc, ar.handle_status, ar.create_time, ar.remark
+        from biz_alert_record ar
+        left join biz_work_order wo on ar.alert_id = wo.alert_id
+    </sql>
+
+    <select id="selectBizAlertRecordList" parameterType="BizAlertRecord" resultMap="BizAlertRecordResult">
+        <include refid="selectBizAlertRecordVo"/>
+        <where>  
+            <if test="alertId != null "> and ar.alert_id = #{alertId}</if>
+            <if test="elderlyId != null "> and ar.elderly_id = #{elderlyId}</if>
+            <if test="elderlyName != null  and elderlyName != ''"> and ar.elderly_name like concat('%', #{elderlyName}, '%')</if>
+            <if test="deviceId != null  and deviceId != ''"> and ar.device_id = #{deviceId}</if>
+            <if test="deviceName != null  and deviceName != ''"> and ar.device_name like concat('%', #{deviceName}, '%')</if>
+            <if test="alertLevel != null "> and ar.alert_level = #{alertLevel}</if>
+            <if test="alertType != null  and alertType != ''"> and ar.alert_type = #{alertType}</if>
+            <if test="alertDesc != null  and alertDesc != ''"> and ar.alert_desc = #{alertDesc}</if>
+            <if test="handleStatus != null  and handleStatus != ''"> and ar.handle_status = #{handleStatus}</if>
+            <if test="params.currentUserId != null">
+                and ar.elderly_id in (
+                    select f.elderly_id
+                    from biz_elderly_family f
+                    where f.user_id = #{params.currentUserId}
+                )
+            </if>
+        </where>
+    </select>
+    
+    <select id="selectBizAlertRecordByAlertId" parameterType="Long" resultMap="BizAlertRecordResult">
+        <include refid="selectBizAlertRecordVo"/>
+        where ar.alert_id = #{alertId}
+    </select>
+
+    <select id="selectMedicationMissedAlert" resultMap="BizAlertRecordResult">
+        <include refid="selectBizAlertRecordVo"/>
+        where ar.elderly_id = #{elderlyId}
+          and ar.alert_type = #{alertType}
+          and ar.remark = #{remark}
+          and date(ar.create_time) = curdate()
+        order by ar.alert_id desc
+        limit 1
+    </select>
+
+    <insert id="insertBizAlertRecord" parameterType="BizAlertRecord" useGeneratedKeys="true" keyProperty="alertId">
+        insert into biz_alert_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="elderlyId != null">elderly_id,</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name,</if>
+            <if test="deviceId != null">device_id,</if>
+            <if test="deviceName != null">device_name,</if>
+            <if test="alertLevel != null">alert_level,</if>
+            <if test="alertType != null and alertType != ''">alert_type,</if>
+            <if test="alertDesc != null">alert_desc,</if>
+            <if test="handleStatus != null">handle_status,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="elderlyId != null">#{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">#{elderlyName},</if>
+            <if test="deviceId != null">#{deviceId},</if>
+            <if test="deviceName != null">#{deviceName},</if>
+            <if test="alertLevel != null">#{alertLevel},</if>
+            <if test="alertType != null and alertType != ''">#{alertType},</if>
+            <if test="alertDesc != null">#{alertDesc},</if>
+            <if test="handleStatus != null">#{handleStatus},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizAlertRecord" parameterType="BizAlertRecord">
+        update biz_alert_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="elderlyId != null">elderly_id = #{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name = #{elderlyName},</if>
+            <if test="deviceId != null">device_id = #{deviceId},</if>
+            <if test="deviceName != null">device_name = #{deviceName},</if>
+            <if test="alertLevel != null">alert_level = #{alertLevel},</if>
+            <if test="alertType != null and alertType != ''">alert_type = #{alertType},</if>
+            <if test="alertDesc != null">alert_desc = #{alertDesc},</if>
+            <if test="handleStatus != null">handle_status = #{handleStatus},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where alert_id = #{alertId}
+    </update>
+
+    <delete id="deleteBizAlertRecordByAlertId" parameterType="Long">
+        delete from biz_alert_record where alert_id = #{alertId}
+    </delete>
+
+    <delete id="deleteBizAlertRecordByAlertIds" parameterType="String">
+        delete from biz_alert_record where alert_id in 
+        <foreach item="alertId" collection="array" open="(" separator="," close=")">
+            #{alertId}
+        </foreach>
+    </delete>
+</mapper>

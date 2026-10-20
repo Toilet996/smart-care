@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.IotSensorLogMapper">
+    
+    <resultMap type="IotSensorLog" id="IotSensorLogResult">
+        <result property="logId"    column="log_id"    />
+        <result property="deviceId"    column="device_id"    />
+        <result property="deviceName"    column="device_name"    />
+        <result property="elderlyId"    column="elderly_id"    />
+        <result property="elderlyName"    column="elderly_name"    />
+        <result property="metricType"    column="metric_type"    />
+        <result property="metricValue"    column="metric_value"    />
+        <result property="reportTime"    column="report_time"    />
+    </resultMap>
+
+    <sql id="selectIotSensorLogVo">
+        select log_id, device_id, device_name, elderly_id, elderly_name, metric_type, metric_value, report_time from iot_sensor_log
+    </sql>
+
+    <select id="selectIotSensorLogList" parameterType="IotSensorLog" resultMap="IotSensorLogResult">
+        <include refid="selectIotSensorLogVo"/>
+        <where>  
+            <if test="deviceId != null  and deviceId != ''"> and device_id = #{deviceId}</if>
+            <if test="deviceName != null  and deviceName != ''"> and device_name like concat('%', #{deviceName}, '%')</if>
+            <if test="elderlyId != null "> and elderly_id = #{elderlyId}</if>
+            <if test="elderlyName != null  and elderlyName != ''"> and elderly_name like concat('%', #{elderlyName}, '%')</if>
+            <if test="metricType != null  and metricType != ''"> and metric_type = #{metricType}</if>
+            <if test="metricValue != null  and metricValue != ''"> and metric_value = #{metricValue}</if>
+            <if test="reportTime != null "> and report_time = #{reportTime}</if>
+        </where>
+    </select>
+    
+    <select id="selectIotSensorLogByLogId" parameterType="Long" resultMap="IotSensorLogResult">
+        <include refid="selectIotSensorLogVo"/>
+        where log_id = #{logId}
+    </select>
+
+    <insert id="insertIotSensorLog" parameterType="IotSensorLog" useGeneratedKeys="true" keyProperty="logId">
+        insert into iot_sensor_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="deviceId != null and deviceId != ''">device_id,</if>
+            <if test="deviceName != null">device_name,</if>
+            <if test="elderlyId != null">elderly_id,</if>
+            <if test="elderlyName != null">elderly_name,</if>
+            <if test="metricType != null and metricType != ''">metric_type,</if>
+            <if test="metricValue != null and metricValue != ''">metric_value,</if>
+            <if test="reportTime != null">report_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="deviceId != null and deviceId != ''">#{deviceId},</if>
+            <if test="deviceName != null">#{deviceName},</if>
+            <if test="elderlyId != null">#{elderlyId},</if>
+            <if test="elderlyName != null">#{elderlyName},</if>
+            <if test="metricType != null and metricType != ''">#{metricType},</if>
+            <if test="metricValue != null and metricValue != ''">#{metricValue},</if>
+            <if test="reportTime != null">#{reportTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateIotSensorLog" parameterType="IotSensorLog">
+        update iot_sensor_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="deviceId != null and deviceId != ''">device_id = #{deviceId},</if>
+            <if test="deviceName != null">device_name = #{deviceName},</if>
+            <if test="elderlyId != null">elderly_id = #{elderlyId},</if>
+            <if test="elderlyName != null">elderly_name = #{elderlyName},</if>
+            <if test="metricType != null and metricType != ''">metric_type = #{metricType},</if>
+            <if test="metricValue != null and metricValue != ''">metric_value = #{metricValue},</if>
+            <if test="reportTime != null">report_time = #{reportTime},</if>
+        </trim>
+        where log_id = #{logId}
+    </update>
+
+    <delete id="deleteIotSensorLogByLogId" parameterType="Long">
+        delete from iot_sensor_log where log_id = #{logId}
+    </delete>
+
+    <delete id="deleteIotSensorLogByLogIds" parameterType="String">
+        delete from iot_sensor_log where log_id in 
+        <foreach item="logId" collection="array" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </delete>
+
+    <insert id="batchInsertIotSensorLog" parameterType="List">
+        insert into iot_sensor_log (device_id, device_name, elderly_id, elderly_name, metric_type, metric_value, report_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.deviceId}, #{item.deviceName}, #{item.elderlyId}, #{item.elderlyName}, #{item.metricType}, #{item.metricValue}, #{item.reportTime})
+        </foreach>
+    </insert>
+</mapper>

@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.FamilyPortalMapper">
+
+    <select id="selectFamilyProfile" resultType="java.util.HashMap">
+        select
+            #{userId} as userId,
+            ifnull(max(f.family_name), concat('家属用户', #{userId})) as familyName,
+            ifnull(max(f.family_phone), '--') as familyPhone,
+            ifnull(group_concat(distinct f.relation order by f.relation separator ' / '), '--') as relationSummary
+        from biz_elderly_family f
+        where f.user_id = #{userId}
+    </select>
+
+    <select id="selectCoreStats" resultType="java.util.HashMap">
+        select
+            (
+                select count(distinct f.elderly_id)
+                from biz_elderly_family f
+                where f.user_id = #{userId}
+            ) as elderlyTotal,
+            (
+                select count(*)
+                from biz_alert_record ar
+                where ar.elderly_id in (
+                    select distinct f.elderly_id
+                    from biz_elderly_family f
+                    where f.user_id = #{userId}
+                )
+                  and date(ar.create_time) = curdate()
+            ) as todayAlertTotal,
+            (
+                select count(*)
+                from biz_alert_record ar
+                where ar.elderly_id in (
+                    select distinct f.elderly_id
+                    from biz_elderly_family f
+                    where f.user_id = #{userId}
+                )
+                  and ar.alert_level = 2
+                  and ar.handle_status in ('0', '1')
+            ) as urgentAlertTotal,
+            (
+                select count(*)
+                from biz_health_report hr
+                where hr.elderly_id in (
+                    select distinct f.elderly_id
+                    from biz_elderly_family f
+                    where f.user_id = #{userId}
+                )
+                  and hr.report_date >= date_sub(curdate(), interval 7 day)
+            ) as weekReportTotal,
+            (
+                select count(*)
+                from biz_elderly_family f
+                where f.user_id = #{userId}
+                  and f.is_emergency in ('1', 'Y')
+            ) as emergencyContactTotal
+    </select>
+
+    <select id="selectLinkedElderlyList" resultType="java.util.HashMap">
+        select
+            e.elderly_id as elderlyId,
+            e.elderly_name as elderlyName,
+            e.age as age,
+            e.gender as gender,
+            e.phone as phone,
+            e.address as address,
+            e.health_status as healthStatus,
+            (
+                select sl.metric_type
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                order by sl.report_time desc, sl.log_id desc
+                limit 1
+            ) as latestMetricType,
+            (
+                select sl.metric_value
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                order by sl.report_time desc, sl.log_id desc
+                limit 1
+            ) as latestMetricValue,
+            (
+                select sl.report_time
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                order by sl.report_time desc, sl.log_id desc
+                limit 1
+            ) as latestMetricTime,
+            (
+                select sl.metric_value
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'leave_bed'
+                order by sl.report_time desc, sl.log_id desc
+                limit 1
+            ) as latestBedStatus,
+            (
+                select sl.report_time
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'leave_bed'
+                order by sl.report_time desc, sl.log_id desc
+                limit 1
+            ) as latestBedStatusTime,
+            (
+                select sl.metric_value
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'door_status'
+                order by sl.report_time desc, sl.log_id desc
+                limit 1
+            ) as latestDoorStatus,
+            (
+                select sl.report_time
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'door_status'
+                order by sl.report_time desc, sl.log_id desc
+                limit 1
+            ) as latestDoorStatusTime,
+            (
+                select sl.metric_value
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'pill_status'
+                order by sl.report_time desc, sl.log_id desc
+                limit 1
+            ) as latestPillStatus,
+            (
+                select sl.report_time
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'pill_status'
+                order by sl.report_time desc, sl.log_id desc
+                limit 1
+            ) as latestPillStatusTime,
+            ifnull((
+                select round(avg(cast(sl.metric_value as decimal(10, 2))), 0)
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'heart_rate'
+                  and sl.report_time >= date_sub(now(), interval 24 hour)
+            ), null) as avgHeartRate,
+            ifnull((
+                select round(avg(cast(sl.metric_value as decimal(10, 2))), 0)
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'breath_rate'
+                  and sl.report_time >= date_sub(now(), interval 24 hour)
+            ), null) as avgBreathRate,
+            ifnull((
+                select count(*)
+                from biz_alert_record ar
+                where ar.elderly_id = e.elderly_id
+                  and ar.handle_status in ('0', '1')
+            ), 0) as activeAlertCount,
+            ifnull((
+                select count(*)
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'pill_status'
+                  and sl.metric_value = 'missed'
+                  and date(sl.report_time) = curdate()
+            ), 0) as medicationMissedCount,
+            ifnull((
+                select count(*)
+                from iot_sensor_log sl
+                where sl.elderly_id = e.elderly_id
+                  and sl.metric_type = 'pill_status'
+                  and sl.metric_value = 'taken'
+                  and date(sl.report_time) = curdate()
+            ), 0) as medicationTakenCount,
+            ifnull((
+                select count(*)
+                from biz_alert_record ar
+                where ar.elderly_id = e.elderly_id
+                  and ar.alert_type like '%药%'
+                  and date(ar.create_time) = curdate()
+            ), 0) as medicationAlertCount,
+            ifnull((
+                select round((ifnull(hr.sleep_score, 0) + ifnull(hr.activity_score, 0)) / 2)
+                from biz_health_report hr
+                where hr.elderly_id = e.elderly_id
+                order by hr.report_date desc, hr.report_id desc
+                limit 1
+            ), null) as latestHealthScore,
+            (
+                select hr.ai_evaluation
+                from biz_health_report hr
+                where hr.elderly_id = e.elderly_id
+                order by hr.report_date desc, hr.report_id desc
+                limit 1
+            ) as latestEvaluation
+        from biz_elderly e
+        where e.elderly_id in (
+            select distinct f.elderly_id
+            from biz_elderly_family f
+            where f.user_id = #{userId}
+        )
+        order by e.elderly_id asc
+    </select>
+
+    <select id="selectRecentAlerts" resultType="java.util.HashMap">
+        select
+            ar.alert_id as alertId,
+            ar.elderly_id as elderlyId,
+            ar.elderly_name as elderlyName,
+            cast(ar.alert_level as char) as alertLevel,
+            ar.alert_type as alertType,
+            ar.handle_status as handleStatus,
+            ar.alert_desc as alertDesc,
+            ar.create_time as createTime
+        from biz_alert_record ar
+        where ar.elderly_id in (
+            select distinct f.elderly_id
+            from biz_elderly_family f
+            where f.user_id = #{userId}
+        )
+        order by ar.create_time desc, ar.alert_id desc
+        limit 8
+    </select>
+
+    <select id="selectLatestReports" resultType="java.util.HashMap">
+        select
+            hr.report_id as reportId,
+            hr.elderly_id as elderlyId,
+            hr.elderly_name as elderlyName,
+            hr.report_type as reportType,
+            hr.report_date as reportDate,
+            hr.sleep_score as sleepScore,
+            hr.activity_score as activityScore,
+            round((ifnull(hr.sleep_score, 0) + ifnull(hr.activity_score, 0)) / 2) as totalScore,
+            hr.ai_evaluation as aiEvaluation
+        from biz_health_report hr
+        where hr.elderly_id in (
+            select distinct f.elderly_id
+            from biz_elderly_family f
+            where f.user_id = #{userId}
+        )
+        order by hr.report_date desc, hr.report_id desc
+        limit 8
+    </select>
+
+    <select id="selectEmergencyContacts" resultType="java.util.HashMap">
+        select
+            f.id as id,
+            f.elderly_id as elderlyId,
+            f.elderly_name as elderlyName,
+            f.family_name as familyName,
+            f.family_phone as familyPhone,
+            f.relation as relation,
+            f.is_emergency as isEmergency
+        from biz_elderly_family f
+        where f.user_id = #{userId}
+        order by case when f.is_emergency in ('1', 'Y') then 0 else 1 end, f.id asc
+    </select>
+
+    <select id="selectVitalsTrend" resultType="java.util.HashMap">
+        select
+            date_format(sl.report_time, '%m-%d %H:%i') as timeLabel,
+            sl.metric_type as metricType,
+            cast(sl.metric_value as char) as metricValue
+        from iot_sensor_log sl
+        where sl.elderly_id = #{elderlyId}
+          and sl.metric_type in ('heart_rate', 'breath_rate')
+        order by sl.report_time desc, sl.log_id desc
+        limit 24
+    </select>
+
+    <select id="selectRecentSosAlerts" resultType="java.util.HashMap">
+        select
+            ar.alert_id as alertId,
+            ar.elderly_id as elderlyId,
+            ar.elderly_name as elderlyName,
+            ar.alert_desc as alertDesc,
+            ar.handle_status as handleStatus,
+            ar.create_time as createTime
+        from biz_alert_record ar
+        where ar.elderly_id in (
+            select distinct f.elderly_id
+            from biz_elderly_family f
+            where f.user_id = #{userId}
+        )
+          and ar.alert_type = 'sos_help'
+        order by ar.create_time desc, ar.alert_id desc
+        limit 5
+    </select>
+
+    <select id="selectLinkedElderlyBasic" resultType="java.util.HashMap">
+        select
+            e.elderly_id as elderlyId,
+            e.elderly_name as elderlyName,
+            e.phone as phone,
+            e.address as address
+        from biz_elderly e
+        where e.elderly_id = #{elderlyId}
+          and e.elderly_id in (
+              select distinct f.elderly_id
+              from biz_elderly_family f
+              where f.user_id = #{userId}
+          )
+        limit 1
+    </select>
+
+    <select id="selectTodayMedicationSummary" resultType="java.util.HashMap">
+        select
+            count(*) as planTotal,
+            sum(case when ifnull(r.execute_status, '0') = '1' then 1 else 0 end) as takenTotal,
+            sum(case when ifnull(r.execute_status, '0') = '2' then 1 else 0 end) as missedTotal,
+            sum(case when ifnull(r.execute_status, '0') = '0' then 1 else 0 end) as pendingTotal
+        from biz_medication_plan p
+        left join biz_medication_record r
+            on r.plan_id = p.plan_id
+           and r.scheduled_date = curdate()
+        where p.status = '0'
+          and p.start_date &lt;= curdate()
+          and (p.end_date is null or p.end_date = '' or p.end_date &gt;= curdate())
+          and p.elderly_id = #{elderlyId}
+          and p.elderly_id in (
+              select distinct f.elderly_id
+              from biz_elderly_family f
+              where f.user_id = #{userId}
+          )
+    </select>
+
+    <select id="selectTodayMedicationPlans" resultType="java.util.HashMap">
+        select
+            p.plan_id as planId,
+            p.elderly_id as elderlyId,
+            p.elderly_name as elderlyName,
+            p.medication_name as medicationName,
+            p.dosage as dosage,
+            p.plan_time as planTime,
+            ifnull(r.execute_status, '0') as executeStatus,
+            r.actual_time as actualTime,
+            r.source_type as sourceType,
+            r.remark as remark
+        from biz_medication_plan p
+        left join biz_medication_record r
+            on r.plan_id = p.plan_id
+           and r.scheduled_date = curdate()
+        where p.status = '0'
+          and p.start_date &lt;= curdate()
+          and (p.end_date is null or p.end_date = '' or p.end_date &gt;= curdate())
+          and p.elderly_id = #{elderlyId}
+          and p.elderly_id in (
+              select distinct f.elderly_id
+              from biz_elderly_family f
+              where f.user_id = #{userId}
+          )
+        order by p.plan_time asc, p.plan_id asc
+    </select>
+</mapper>

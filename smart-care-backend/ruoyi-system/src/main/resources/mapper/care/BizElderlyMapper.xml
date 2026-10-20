@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.BizElderlyMapper">
+
+    <resultMap type="BizElderly" id="BizElderlyResult">
+        <result property="elderlyId" column="elderly_id" />
+        <result property="elderlyName" column="elderly_name" />
+        <result property="age" column="age" />
+        <result property="gender" column="gender" />
+        <result property="idCard" column="id_card" />
+        <result property="phone" column="phone" />
+        <result property="address" column="address" />
+        <result property="healthStatus" column="health_status" />
+        <result property="status" column="status" />
+        <result property="managementStatus" column="management_status" />
+        <result property="responsiblePerson" column="responsible_person" />
+        <result property="nextVisitTime" column="next_visit_time" />
+        <result property="interventionPlan" column="intervention_plan" />
+        <result property="followUpResult" column="follow_up_result" />
+        <result property="latestHandler" column="latest_handler" />
+        <result property="managementStartTime" column="management_start_time" />
+        <result property="releaseReason" column="release_reason" />
+        <result property="deviceCount" column="device_count" />
+        <result property="alertCount" column="alert_count" />
+        <result property="openOrderCount" column="open_order_count" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectBizElderlyVo">
+        select
+            e.elderly_id,
+            e.elderly_name,
+            e.age,
+            e.gender,
+            e.id_card,
+            e.phone,
+            e.address,
+            e.health_status,
+            e.status,
+            e.management_status,
+            e.responsible_person,
+            e.next_visit_time,
+            e.intervention_plan,
+            e.follow_up_result,
+            e.latest_handler,
+            e.management_start_time,
+            e.release_reason,
+            (
+                select count(1) from iot_device d where d.elderly_id = e.elderly_id
+            ) as device_count,
+            (
+                select count(1) from biz_alert_record ar where ar.elderly_id = e.elderly_id
+            ) as alert_count,
+            (
+                select count(1)
+                from biz_work_order wo
+                where wo.elderly_id = e.elderly_id
+                  and wo.status in ('0', '1')
+            ) as open_order_count,
+            e.create_by,
+            e.create_time,
+            e.remark
+        from biz_elderly e
+    </sql>
+
+    <select id="selectBizElderlyList" parameterType="BizElderly" resultMap="BizElderlyResult">
+        <include refid="selectBizElderlyVo"/>
+        <where>
+            <if test="elderlyName != null and elderlyName != ''">and e.elderly_name like concat('%', #{elderlyName}, '%')</if>
+            <if test="age != null">and e.age = #{age}</if>
+            <if test="gender != null and gender != ''">and e.gender = #{gender}</if>
+            <if test="idCard != null and idCard != ''">and e.id_card = #{idCard}</if>
+            <if test="phone != null and phone != ''">and e.phone = #{phone}</if>
+            <if test="address != null and address != ''">and e.address = #{address}</if>
+            <if test="healthStatus != null and healthStatus != ''">and e.health_status = #{healthStatus}</if>
+            <if test="status != null and status != ''">and e.status = #{status}</if>
+            <if test="managementStatus != null and managementStatus != ''">and e.management_status = #{managementStatus}</if>
+            <if test="responsiblePerson != null and responsiblePerson != ''">and e.responsible_person like concat('%', #{responsiblePerson}, '%')</if>
+            <if test="params.currentUserId != null">
+                and exists (
+                    select 1
+                    from biz_elderly_family f
+                    where f.elderly_id = e.elderly_id
+                      and f.user_id = #{params.currentUserId}
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="selectBizElderlyByElderlyId" parameterType="Long" resultMap="BizElderlyResult">
+        <include refid="selectBizElderlyVo"/>
+        where e.elderly_id = #{elderlyId}
+    </select>
+
+    <insert id="insertBizElderly" parameterType="BizElderly" useGeneratedKeys="true" keyProperty="elderlyId">
+        insert into biz_elderly
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="elderlyName != null and elderlyName != ''">elderly_name,</if>
+            <if test="age != null">age,</if>
+            <if test="gender != null">gender,</if>
+            <if test="idCard != null">id_card,</if>
+            <if test="phone != null">phone,</if>
+            <if test="address != null">address,</if>
+            <if test="healthStatus != null">health_status,</if>
+            <if test="status != null">status,</if>
+            <if test="managementStatus != null">management_status,</if>
+            <if test="responsiblePerson != null">responsible_person,</if>
+            <if test="nextVisitTime != null">next_visit_time,</if>
+            <if test="interventionPlan != null">intervention_plan,</if>
+            <if test="followUpResult != null">follow_up_result,</if>
+            <if test="latestHandler != null">latest_handler,</if>
+            <if test="managementStartTime != null">management_start_time,</if>
+            <if test="releaseReason != null">release_reason,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="elderlyName != null and elderlyName != ''">#{elderlyName},</if>
+            <if test="age != null">#{age},</if>
+            <if test="gender != null">#{gender},</if>
+            <if test="idCard != null">#{idCard},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="address != null">#{address},</if>
+            <if test="healthStatus != null">#{healthStatus},</if>
+            <if test="status != null">#{status},</if>
+            <if test="managementStatus != null">#{managementStatus},</if>
+            <if test="responsiblePerson != null">#{responsiblePerson},</if>
+            <if test="nextVisitTime != null">#{nextVisitTime},</if>
+            <if test="interventionPlan != null">#{interventionPlan},</if>
+            <if test="followUpResult != null">#{followUpResult},</if>
+            <if test="latestHandler != null">#{latestHandler},</if>
+            <if test="managementStartTime != null">#{managementStartTime},</if>
+            <if test="releaseReason != null">#{releaseReason},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateBizElderly" parameterType="BizElderly">
+        update biz_elderly
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="elderlyName != null and elderlyName != ''">elderly_name = #{elderlyName},</if>
+            <if test="age != null">age = #{age},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="idCard != null">id_card = #{idCard},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="healthStatus != null">health_status = #{healthStatus},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="managementStatus != null">management_status = #{managementStatus},</if>
+            <if test="responsiblePerson != null">responsible_person = #{responsiblePerson},</if>
+            <if test="nextVisitTime != null">next_visit_time = #{nextVisitTime},</if>
+            <if test="interventionPlan != null">intervention_plan = #{interventionPlan},</if>
+            <if test="followUpResult != null">follow_up_result = #{followUpResult},</if>
+            <if test="latestHandler != null">latest_handler = #{latestHandler},</if>
+            <if test="managementStartTime != null">management_start_time = #{managementStartTime},</if>
+            <if test="releaseReason != null">release_reason = #{releaseReason},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where elderly_id = #{elderlyId}
+    </update>
+
+    <delete id="deleteBizElderlyByElderlyId" parameterType="Long">
+        delete from biz_elderly where elderly_id = #{elderlyId}
+    </delete>
+
+    <delete id="deleteBizElderlyByElderlyIds" parameterType="String">
+        delete from biz_elderly where elderly_id in
+        <foreach item="elderlyId" collection="array" open="(" separator="," close=")">
+            #{elderlyId}
+        </foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.BizMessageNoticeMapper">
+
+    <resultMap id="BizMessageNoticeResult" type="BizMessageNotice">
+        <result property="messageId" column="message_id"/>
+        <result property="bizKey" column="biz_key"/>
+        <result property="userId" column="user_id"/>
+        <result property="roleKey" column="role_key"/>
+        <result property="messageTitle" column="message_title"/>
+        <result property="messageContent" column="message_content"/>
+        <result property="messageType" column="message_type"/>
+        <result property="messageLevel" column="message_level"/>
+        <result property="elderlyId" column="elderly_id"/>
+        <result property="elderlyName" column="elderly_name"/>
+        <result property="alertId" column="alert_id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="relatedRoute" column="related_route"/>
+        <result property="readStatus" column="read_status"/>
+        <result property="readTime" column="read_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectBizMessageNoticeVo">
+        select
+            message_id, biz_key, user_id, role_key, message_title, message_content,
+            message_type, message_level, elderly_id, elderly_name, alert_id, order_id,
+            related_route, read_status, read_time, create_by, create_time, remark
+        from biz_message_notice
+    </sql>
+
+    <select id="selectBizMessageNoticeById" parameterType="Long" resultMap="BizMessageNoticeResult">
+        <include refid="selectBizMessageNoticeVo"/>
+        where message_id = #{messageId}
+    </select>
+
+    <select id="selectBizMessageNoticeList" parameterType="BizMessageNotice" resultMap="BizMessageNoticeResult">
+        <include refid="selectBizMessageNoticeVo"/>
+        <where>
+            and user_id = #{userId}
+            <if test="messageType != null and messageType != ''">
+                and message_type = #{messageType}
+            </if>
+            <if test="readStatus != null and readStatus != ''">
+                and read_status = #{readStatus}
+            </if>
+            <if test="messageLevel != null and messageLevel != ''">
+                and message_level = #{messageLevel}
+            </if>
+            <if test="elderlyName != null and elderlyName != ''">
+                and elderly_name like concat('%', #{elderlyName}, '%')
+            </if>
+            <if test="messageTitle != null and messageTitle != ''">
+                and message_title like concat('%', #{messageTitle}, '%')
+            </if>
+        </where>
+        order by read_status asc, create_time desc, message_id desc
+    </select>
+
+    <insert id="insertIgnoreBizMessageNotice" parameterType="BizMessageNotice">
+        insert ignore into biz_message_notice
+        (biz_key, user_id, role_key, message_title, message_content, message_type, message_level,
+         elderly_id, elderly_name, alert_id, order_id, related_route, read_status, read_time, create_by, create_time, remark)
+        values
+        (#{bizKey}, #{userId}, #{roleKey}, #{messageTitle}, #{messageContent}, #{messageType}, #{messageLevel},
+         #{elderlyId}, #{elderlyName}, #{alertId}, #{orderId}, #{relatedRoute}, #{readStatus}, #{readTime}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateBizMessageNoticeRead">
+        update biz_message_notice
+        set read_status = '1',
+            read_time = now()
+        where message_id = #{messageId}
+          and user_id = #{userId}
+          and read_status = '0'
+    </update>
+
+    <update id="updateAllBizMessageNoticeRead">
+        update biz_message_notice
+        set read_status = '1',
+            read_time = now()
+        where user_id = #{userId}
+          and read_status = '0'
+    </update>
+
+    <select id="selectMessageStats" parameterType="Long" resultType="java.util.HashMap">
+        select 'total' as statKey, count(*) as statValue
+        from biz_message_notice
+        where user_id = #{userId}
+        union all
+        select 'unread' as statKey, count(*) as statValue
+        from biz_message_notice
+        where user_id = #{userId} and read_status = '0'
+        union all
+        select 'urgent' as statKey, count(*) as statValue
+        from biz_message_notice
+        where user_id = #{userId} and message_level in ('2', '3')
+        union all
+        select 'today' as statKey, count(*) as statValue
+        from biz_message_notice
+        where user_id = #{userId} and date(create_time) = curdate()
+    </select>
+
+    <select id="selectUserIdsByRoleKeys" resultType="java.lang.Long">
+        select distinct ur.user_id
+        from sys_user_role ur
+        inner join sys_role r on ur.role_id = r.role_id
+        inner join sys_user u on ur.user_id = u.user_id
+        where r.role_key in
+        <foreach item="roleKey" collection="roleKeys" open="(" separator="," close=")">
+            #{roleKey}
+        </foreach>
+          and u.status = '0'
+          and u.del_flag = '0'
+    </select>
+</mapper>

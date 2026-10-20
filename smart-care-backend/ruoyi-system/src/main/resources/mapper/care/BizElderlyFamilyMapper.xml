@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.smartcare.mapper.BizElderlyFamilyMapper">
+    
+    <resultMap type="BizElderlyFamily" id="BizElderlyFamilyResult">
+        <result property="id"    column="id"    />
+        <result property="elderlyId"    column="elderly_id"    />
+        <result property="elderlyName"    column="elderly_name"    />
+        <result property="userId"    column="user_id"    />
+        <result property="familyName"    column="family_name"    />
+        <result property="familyPhone"    column="family_phone"    />
+        <result property="relation"    column="relation"    />
+        <result property="isEmergency"    column="is_emergency"    />
+        <result property="relatedElderlyCount" column="related_elderly_count" />
+        <result property="elderlyNames" column="elderly_names" />
+        <result property="latestAlertElderlyName" column="latest_alert_elderly_name" />
+        <result property="latestAlertTime" column="latest_alert_time" />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectBizElderlyFamilyVo">
+        select
+            f.id,
+            f.elderly_id,
+            f.elderly_name,
+            f.user_id,
+            f.family_name,
+            f.family_phone,
+            f.relation,
+            f.is_emergency,
+            (
+                select count(distinct ff.elderly_id)
+                from biz_elderly_family ff
+                where ff.user_id = f.user_id
+            ) as related_elderly_count,
+            (
+                select group_concat(distinct ff.elderly_name order by ff.elderly_name separator '、')
+                from biz_elderly_family ff
+                where ff.user_id = f.user_id
+            ) as elderly_names,
+            (
+                select ar.elderly_name
+                from biz_alert_record ar
+                where ar.elderly_id in (
+                    select ff.elderly_id
+                    from biz_elderly_family ff
+                    where ff.user_id = f.user_id
+                )
+                order by ar.create_time desc, ar.alert_id desc
+                limit 1
+            ) as latest_alert_elderly_name,
+            (
+                select ar.create_time
+                from biz_alert_record ar
+                where ar.elderly_id in (
+                    select ff.elderly_id
+                    from biz_elderly_family ff
+                    where ff.user_id = f.user_id
+                )
+                order by ar.create_time desc, ar.alert_id desc
+                limit 1
+            ) as latest_alert_time,
+            f.create_time
+        from biz_elderly_family f
+    </sql>
+
+    <select id="selectBizElderlyFamilyList" parameterType="BizElderlyFamily" resultMap="BizElderlyFamilyResult">
+        <include refid="selectBizElderlyFamilyVo"/>
+        <where>  
+            <if test="elderlyId != null "> and f.elderly_id = #{elderlyId}</if>
+            <if test="elderlyName != null  and elderlyName != ''"> and f.elderly_name like concat('%', #{elderlyName}, '%')</if>
+            <if test="userId != null "> and f.user_id = #{userId}</if>
+            <if test="familyName != null  and familyName != ''"> and f.family_name like concat('%', #{familyName}, '%')</if>
+            <if test="familyPhone != null  and familyPhone != ''"> and f.family_phone = #{familyPhone}</if>
+            <if test="relation != null  and relation != ''"> and f.relation = #{relation}</if>
+            <if test="isEmergency != null  and isEmergency != ''"> and f.is_emergency = #{isEmergency}</if>
+        </where>
+    </select>
+    
+    <select id="selectBizElderlyFamilyById" parameterType="Long" resultMap="BizElderlyFamilyResult">
+        <include refid="selectBizElderlyFamilyVo"/>
+        where f.id = #{id}
+    </select>
+
+    <insert id="insertBizElderlyFamily" parameterType="BizElderlyFamily" useGeneratedKeys="true" keyProperty="id">
+        insert into biz_elderly_family
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="elderlyId != null">elderly_id,</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="familyName != null and familyName != ''">family_name,</if>
+            <if test="familyPhone != null">family_phone,</if>
+            <if test="relation != null and relation != ''">relation,</if>
+            <if test="isEmergency != null">is_emergency,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="elderlyId != null">#{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">#{elderlyName},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="familyName != null and familyName != ''">#{familyName},</if>
+            <if test="familyPhone != null">#{familyPhone},</if>
+            <if test="relation != null and relation != ''">#{relation},</if>
+            <if test="isEmergency != null">#{isEmergency},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizElderlyFamily" parameterType="BizElderlyFamily">
+        update biz_elderly_family
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="elderlyId != null">elderly_id = #{elderlyId},</if>
+            <if test="elderlyName != null and elderlyName != ''">elderly_name = #{elderlyName},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="familyName != null and familyName != ''">family_name = #{familyName},</if>
+            <if test="familyPhone != null">family_phone = #{familyPhone},</if>
+            <if test="relation != null and relation != ''">relation = #{relation},</if>
+            <if test="isEmergency != null">is_emergency = #{isEmergency},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBizElderlyFamilyById" parameterType="Long">
+        delete from biz_elderly_family where id = #{id}
+    </delete>
+
+    <delete id="deleteBizElderlyFamilyByIds" parameterType="String">
+        delete from biz_elderly_family where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="countLinkedElderlyByUserId" resultType="java.lang.Long">
+        select count(1)
+        from biz_elderly_family
+        where user_id = #{userId}
+          and elderly_id = #{elderlyId}
+    </select>
+
+    <select id="selectFamilyUserOptions" resultType="java.util.HashMap">
+        select
+            u.user_id as userId,
+            u.user_name as userName,
+            u.nick_name as nickName,
+            u.phonenumber as phonenumber
+        from sys_user u
+        inner join sys_user_role ur on u.user_id = ur.user_id
+        inner join sys_role r on ur.role_id = r.role_id
+        where u.del_flag = '0'
+          and u.status = '0'
+          and r.role_key = 'smartcare_family'
+        order by u.user_id asc
+    </select>
+
+    <select id="selectElderlyOptions" resultType="java.util.HashMap">
+        select
+            elderly_id as elderlyId,
+            elderly_name as elderlyName,
+            phone as phone
+        from biz_elderly
+        order by elderly_id asc
+    </select>
+
+    <select id="selectFamilyUserIdsByElderlyId" resultType="java.lang.Long">
+        select user_id
+        from biz_elderly_family
+        where elderly_id = #{elderlyId}
+    </select>
+</mapper>
