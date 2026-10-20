@@ -1,8 +1,8 @@
 {
-  "name": "ruoyi",
+  "name": "smart-care-frontend",
   "version": "3.9.1",
-  "description": "若依管理系统",
-  "author": "若依",
+  "description": "智慧养老大数据分析决策系统前端",
+  "author": "Toilet996",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://gitee.com/y_project/RuoYi-Vue.git"
+    "url": "https://github.com/Toilet996/smart-care.git"
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
